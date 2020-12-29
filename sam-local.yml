@@ -1,0 +1,32 @@
+Parameters:
+  Stage:
+    Type: String
+    Default: dev_local
+  
+Globals:
+  Api:
+    OpenApiVersion: 3.0.1
+  Function:
+    Runtime: nodejs12.x
+
+Resources:
+  Api:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name:
+        Fn::Sub: ${AppName}-api-${Stage}
+      StageName: !Ref Stage 
+      DefinitionBody:
+        Fn::Transform:
+          Name: AWS::Include
+          Parameters:
+            Location: swagger.yml
+
+  TestFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName:
+        Fn::Sub: ${AppName}-test-func-${Stage}
+      Description: Test Function
+      CodeUri: ./
+      Handler: index.handler

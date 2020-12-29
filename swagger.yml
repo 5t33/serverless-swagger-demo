@@ -1,0 +1,48 @@
+openapi: 3.0.0
+info:
+  title: openapi-example
+  version: 0.3.0
+  description: "<p>This is an example OpenAPI specification document for our identity management solution</p>"
+  termsOfService: "http://example.com/tos"
+  contact:
+    email: "example@example.com"
+x-amazon-apigateway-request-validators:
+  all:
+    validateRequestBody: true
+    validateRequestParameters: true
+  params:
+    validateRequestBody: true
+    validateRequestParameters: true
+  body:
+    validateRequestBody: true
+    validateRequestParameters: false
+
+paths:
+  /testFunc:
+    get:
+      operationId: testFunc
+      description: Test sam local functionality with API Gateway & Open API
+      x-amazon-apigateway-request-validator: params
+      parameters:
+        - in: query
+          name: testQuery
+          description: a test parameter to see how parameters are passed via swagger & API Gateway.
+          required: true
+          schema:
+            type: string
+      x-amazon-apigateway-integration:
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${TestFunction.Arn}/invocations
+        httpMethod: "GET"
+        timeoutInMillis:
+          Ref: 3000
+        type: "aws_proxy"
+      responses:
+        '200':
+          description: A 200 response.
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          description: bad input parameter
