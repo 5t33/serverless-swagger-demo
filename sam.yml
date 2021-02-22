@@ -1,0 +1,90 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: 'AWS::Serverless-2016-10-31'
+Parameters:
+  AppName:
+    Type: String
+    Default: demo-app
+  Stage:
+    Type: String
+    Default: dev_local
+
+Resources:
+  ApiRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Path: 
+        Fn::Sub: /${Stage}/${AppName}/serviceRoles/
+      RoleName: 
+        Fn::Sub: ${AppName}-api-execution-role-${Stage}
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - apigateway.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: 
+            Fn::Sub: ${AppName}-api-execution-role-policy-${Stage}
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - lambda:InvokeFunction
+                Resource:
+                  - Fn::Sub: ${TestFunction.Arn}
+                  - Fn::Sub: ${DocsFunction.Arn}
+  Api:
+    Type: AWS::Serverless::Api
+    Properties:
+      MethodSettings:
+        - LoggingLevel: INFO
+          ResourcePath: '/*' # allows for logging on any resource
+          HttpMethod: '*' # allows for logging on any method
+      AccessLogSetting: 
+        Format: '{ "requestId":"$context.requestId", "ip": "$context.identity.sourceIp", "caller":"$context.identity.caller", "user":"$context.identity.user","requestTime":"$context.requestTime", "httpMethod":"$context.httpMethod","resourcePath":"$context.resourcePath", "status":"$context.status","protocol":"$context.protocol", "responseLength":"$context.responseLength" }'
+      TracingEnabled: true
+      Name:
+        Fn::Sub: ${AppName}-api-${Stage}
+      StageName: !Ref Stage 
+      DefinitionBody:
+        Fn::Transform:
+          Name: AWS::Include
+          Parameters:
+            Location: swagger.yml
+      Variables:
+        Stage:
+          Fn::Sub: ${Stage}
+      Domain:
+        CertificateArn: arn:aws:acm:us-east-2:01234567890:certificate/4a3152c3-29a5-4ab6-994c-2a53d5ba9942
+        DomainName: www.serverless-swagger-demo.com
+        Route53:
+          DistributionDomainName: www.serverless-swagger-demo.com
+          HostedZoneId: <your id here>
+
+  TestFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Tracing: Active
+      Runtime: nodejs12.x
+      PackageType: Zip
+      FunctionName:
+        Fn::Sub: ${AppName}-test-func-${Stage}
+      Description: Test Function
+      CodeUri: ./
+      Handler: index.handler
+  DocsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Tracing: Active
+      Runtime: nodejs12.x
+      PackageType: Zip
+      FunctionName:
+        Fn::Sub: ${AppName}-docs-func-${Stage}
+      CodeUri: ./
+      Handler: docs.handler
+      Environment:
+        Variables:
+          stage: !Ref Stage 

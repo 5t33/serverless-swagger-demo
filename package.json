@@ -1,11 +1,24 @@
 {
-  "name": "aws-sam-sandbox",
+  "name": "serverless-swagger-demo",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test-integration": "stage=dev_local jest ./test/integration/* --testTimeout 10000",
+    "test-acceptance": "base_url=https://www.serverless-swagger-demo.com stage=dev jest ./test/integration/* --testTimeout 10000"
   },
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "@vendia/serverless-express": "^4.3.1",
+    "express": "^4.17.1",
+    "serverless-express": "^2.0.11",
+    "swagger-ui-express": "^4.1.6",
+    "yamljs": "^0.3.0"
+  },
+  "devDependencies": {
+    "axios": "^0.21.1",
+    "express-openapi-validator": "^4.11.0",
+    "supertest": "^6.1.3"
+  }
 }

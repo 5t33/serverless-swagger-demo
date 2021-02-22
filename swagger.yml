@@ -1,8 +1,9 @@
 openapi: 3.0.0
+
 info:
-  title: openapi-example
+  title: oserverless-swagger-demo
   version: 0.3.0
-  description: "<p>This is an example OpenAPI specification document for our identity management solution</p>"
+  description: "This is an example OpenAPI specification"
   termsOfService: "http://example.com/tos"
   contact:
     email: "example@example.com"
@@ -18,6 +19,37 @@ x-amazon-apigateway-request-validators:
     validateRequestParameters: false
 
 paths:
+  /docs:
+    get:
+      operationId: docs
+      x-amazon-apigateway-integration:
+        credentials: 
+          Fn::Sub: ${ApiRole.Arn}
+        httpMethod: POST
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${DocsFunction.Arn}/invocations
+        timeoutInMillis: 3000
+        type: "aws_proxy"
+      responses:
+        '200':
+          description: A 200 response.
+          content:
+            application/json:
+              schema:
+                type: object
+  /{proxy+}:
+    x-amazon-apigateway-any-method:
+      operationId: docs
+      produces:
+        - "application/json"
+      x-amazon-apigateway-integration:
+        credentials: 
+          Fn::Sub: ${ApiRole.Arn}
+        httpMethod: POST
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${DocsFunction.Arn}/invocations
+        timeoutInMillis: 3000
+        type: "aws_proxy"
   /testFunc:
     get:
       operationId: testFunc
@@ -31,11 +63,12 @@ paths:
           schema:
             type: string
       x-amazon-apigateway-integration:
+        credentials: 
+          Fn::Sub: ${ApiRole.Arn}
         uri:
           Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${TestFunction.Arn}/invocations
-        httpMethod: "GET"
-        timeoutInMillis:
-          Ref: 3000
+        httpMethod: POST
+        timeoutInMillis: 3000
         type: "aws_proxy"
       responses:
         '200':
@@ -46,3 +79,42 @@ paths:
                 type: object
         '400':
           description: bad input parameter
+     
+components:
+  schemas:
+    Item:
+      type: object
+      required:
+        - id
+        - name
+        - manufacturer
+        - releaseDate
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: d290f1ee-6c54-4b01-90e6-d701748f0851
+        name:
+          type: string
+          example: Widget Adapter
+        releaseDate:
+          type: string
+          format: date-time
+          example: '2016-08-29T09:12:33.001Z'
+        manufacturer:
+          $ref: '#/components/schemas/Manufacturer'
+    Manufacturer:
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          example: ACME Corporation
+        homePage:
+          type: string
+          format: url
+          example: 'https://www.acme-corp.com'
+        phone:
+          type: string
+          example: 408-867-5309
+      type: object
